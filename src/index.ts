@@ -83,8 +83,17 @@ new GLTFLoader().load('Characters/Soldier/Soldier.glb', function (gltf) {
     characterControls = new CharacterControls(model, mixer, animationsMap, orbitControls, camera, 'Idle')
 });
 
-const timeStep = 1 / 60;
+const geometry = new THREE.BoxGeometry(10, 20, 10);
+const material = new THREE.MeshPhongMaterial( {color: 0x00ff00} );
+const cylinder = new THREE.Mesh( geometry, material );
+scene.add( cylinder );
+cylinder.scale.set( 20, 18, 20 )
+cylinder.position.z = -250
+cylinder.position.y = 150
 
+const boundingBox = new THREE.Box3();
+boundingBox.setFromObject(cylinder)
+console.log(boundingBox)
 
 
 // CONTROL KEYS
@@ -102,9 +111,10 @@ document.addEventListener('keyup', (event) => {
     keyDisplayQueue.up(event.key);
     (keysPressed as any)[event.key.toLowerCase()] = false
 }, false);
-
+const timeStep = 1 / 60;
 // ANIMATE
 var start = 0
+var prevModelBox: THREE.Box3
 function animate() {
     world.step(timeStep);
     var direction: THREE.Vector3
@@ -115,6 +125,23 @@ function animate() {
 
     var origin
     var intersects: THREE.Intersection[][][] = []
+    // Teleportation
+    if (model) {
+        model.traverse(function (object: any) {
+            if (object.isMesh) {
+                let count = 0
+                // console.log(object.geometry.boundingBox)
+                if (boundingBox.containsBox(object.geometry.boundingBox)){
+                    if (prevModelBox !== object.geometry.boundingBox){
+                       console.log("contained") 
+                       console.log(object.geometry.boundingBox)
+                       prevModelBox = object.geometry.boundingBox
+                    }
+                    
+                }
+            }
+        })
+    }
 
     // Checking for obstacles in front of the character
     var step = false;
@@ -127,6 +154,7 @@ function animate() {
             0,
             700000000000000
         )
+
         let downIntersects: THREE.Intersection[][] = []
         if (myRoom) {
             myRoom.traverse(function (object: any) {
@@ -138,6 +166,7 @@ function animate() {
                 }
             })
         }
+
         if (downIntersects.length !== 0) {
             let newYPosition = downIntersects[0][0].distance
             if (newYPosition > 27) {
@@ -149,6 +178,7 @@ function animate() {
 
             
         }
+
         // const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), origin, 700000000000000, 0x0000ff);
         // scene.add(arrowHelper);
         let preIntersect = 0
