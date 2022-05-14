@@ -1,30 +1,37 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { A, D, DIRECTIONS, S, W } from './utils'
+import * as CANNON from 'cannon-es'
+
 
 
 export class CharacterControls {
 
     model: THREE.Group
+    world: CANNON.World
+    scene: THREE.Scene
     mixer: THREE.AnimationMixer
     animationsMap: Map<string, THREE.AnimationAction> = new Map() // Walk, Run, Idle
     orbitControl: OrbitControls
     camera: THREE.Camera
+    prevPos: CANNON.Vec3
+    camPrePos: THREE.Vector3
+    modelPrePos: THREE.Vector3
 
     // state
     toggleRun: boolean = true
     currentAction: string
-    
+
     // temporary data
     walkDirection = new THREE.Vector3()
     rotateAngle = new THREE.Vector3(0, 1, 0)
     rotateQuarternion: THREE.Quaternion = new THREE.Quaternion()
     cameraTarget = new THREE.Vector3()
-    
+
     // constants
     fadeDuration: number = 0.2
-    runVelocity = 5*150
-    walkVelocity = 2*150
+    runVelocity = 5 * 150
+    walkVelocity = 2 * 150
 
     constructor(model: THREE.Group,
         mixer: THREE.AnimationMixer, animationsMap: Map<string, THREE.AnimationAction>,
@@ -41,7 +48,7 @@ export class CharacterControls {
         })
         this.orbitControl = orbitControl
         this.camera = camera
-        this.updateCameraTarget(0,0)
+        this.updateCameraTarget(0, 0)
     }
 
     public switchRunToggle() {
@@ -75,8 +82,8 @@ export class CharacterControls {
         if (this.currentAction == 'Run' || this.currentAction == 'Walk') {
             // calculate towards camera direction
             var angleYCameraDirection = Math.atan2(
-                    (this.camera.position.x - this.model.position.x), 
-                    (this.camera.position.z - this.model.position.z))
+                (this.camera.position.x - this.model.position.x),
+                (this.camera.position.z - this.model.position.z))
             // diagonal movement angle offset
             var directionOffset = this.directionOffset(keysPressed)
 
@@ -96,6 +103,7 @@ export class CharacterControls {
             // move model & camera
             const moveX = this.walkDirection.x * velocity * delta
             const moveZ = this.walkDirection.z * velocity * delta
+            this.modelPrePos = new THREE.Vector3( this.model.position.x, this.model.position.y, this.model.position.z )
             this.model.position.x += moveX
             this.model.position.z += moveZ
             this.updateCameraTarget(moveX, moveZ)
@@ -104,6 +112,7 @@ export class CharacterControls {
 
     private updateCameraTarget(moveX: number, moveZ: number) {
         // move camera
+        this.camPrePos = new THREE.Vector3( this.camera.position.x, this.camera.position.y, this.camera.position.z )
         this.camera.position.x += moveX
         this.camera.position.z += moveZ
 
