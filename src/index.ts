@@ -41,12 +41,12 @@ light()
 
 // Physics World
 
-const world = new CANNON.World({
-    gravity: new CANNON.Vec3(0, -900.81, 0)
-});
+// const world = new CANNON.World({
+//     gravity: new CANNON.Vec3(0, -900.81, 0)
+// });
 
-world.broadphase = new CANNON.NaiveBroadphase()
-world.broadphase.useBoundingBoxes = true
+// world.broadphase = new CANNON.NaiveBroadphase()
+// world.broadphase.useBoundingBoxes = true
 
 // ROOM
 var myRoom: THREE.Group
@@ -56,6 +56,7 @@ new GLTFLoader().load("RoomToBeEscaped/scene.gltf", function (gltf) {
     scene.add(myRoom)
     myRoom.castShadow = true
     myRoom.receiveShadow = true
+    // console.log(gltf)
 })
 
 // MODEL WITH ANIMATIONS
@@ -64,14 +65,20 @@ var characterControls: CharacterControls
 
 new GLTFLoader().load('Characters/Soldier/Soldier.glb', function (gltf) {
     model = gltf.scene;
-    model.traverse(function (object: any) {
-        if (object.isMesh) object.castShadow = true;
-    });
     scene.add(model);
     model.scale.set(150, 150, 150)
+    console.log(model.position)
     model.position.z = -250
     model.castShadow = true
     model.receiveShadow = true
+
+
+    model.traverse(function (object: any) {
+        if (object.isMesh) {
+            object.castShadow = true;
+            console.log(object.geometry.boundingBox)
+        }
+    });
 
     const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
     const mixer = new THREE.AnimationMixer(model);
@@ -84,12 +91,15 @@ new GLTFLoader().load('Characters/Soldier/Soldier.glb', function (gltf) {
 });
 
 const geometry = new THREE.BoxGeometry(10, 20, 10);
-const material = new THREE.MeshPhongMaterial( {color: 0x00ff00} );
-const cylinder = new THREE.Mesh( geometry, material );
-scene.add( cylinder );
-cylinder.scale.set( 20, 18, 20 )
-cylinder.position.z = -250
+const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+const cylinder = new THREE.Mesh(geometry, material);
+scene.add(cylinder);
+let i = 1
+cylinder.scale.set(20 * i, 18 * i, 20 * i)
+cylinder.position.z = -1500
 cylinder.position.y = 150
+cylinder.material.transparent = true
+cylinder.material.opacity = 0.5
 
 const boundingBox = new THREE.Box3();
 boundingBox.setFromObject(cylinder)
@@ -114,9 +124,13 @@ document.addEventListener('keyup', (event) => {
 const timeStep = 1 / 60;
 // ANIMATE
 var start = 0
-var prevModelBox: THREE.Box3
+var modelBoundingBox: THREE.Box3;
+var bounded: any
+
 function animate() {
-    world.step(timeStep);
+    // world.step(timeStep);
+    let count = 0
+
     var direction: THREE.Vector3
     if (characterControls) {
         direction = characterControls.walkDirection
@@ -129,19 +143,21 @@ function animate() {
     if (model) {
         model.traverse(function (object: any) {
             if (object.isMesh) {
-                let count = 0
-                // console.log(object.geometry.boundingBox)
-                if (boundingBox.containsBox(object.geometry.boundingBox)){
-                    if (prevModelBox !== object.geometry.boundingBox){
-                       console.log("contained") 
-                       console.log(object.geometry.boundingBox)
-                       prevModelBox = object.geometry.boundingBox
-                    }
-                    
+                if (count < 1) {
+                    modelBoundingBox = object.geometry.boundingBox.setFromObject(model)
+                    bounded = object
+                    count++
                 }
             }
         })
+
+        if (boundingBox.containsBox(modelBoundingBox)) {
+            console.log("contained")
+            model.position.set(0,0,-250)
+        }
     }
+
+
 
     // Checking for obstacles in front of the character
     var step = false;
@@ -176,7 +192,7 @@ function animate() {
                 // modelBody.position.y = 0
             }
 
-            
+
         }
 
         // const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), origin, 700000000000000, 0x0000ff);
@@ -202,9 +218,9 @@ function animate() {
                 })
             }
 
-            if (thisRayIntersects.length !== 0 && thisRayIntersects.length < 55) {  preIntersect = origin.y  }
+            if (thisRayIntersects.length !== 0 && thisRayIntersects.length < 55) { preIntersect = origin.y }
 
-            if (thisRayIntersects.length !== 0) {   intersects.push(thisRayIntersects)  }
+            if (thisRayIntersects.length !== 0) { intersects.push(thisRayIntersects) }
 
             // const arrowHelper = new THREE.ArrowHelper(direction, origin, 70, 0x0000ff);
             // scene.add(arrowHelper);
@@ -220,9 +236,9 @@ function animate() {
     }
 
     // Keeping the character and camera and the same position if there are obstacles
-    if (model !== undefined && intersects.length !== 0 &&!step) {
+    if (model !== undefined && intersects.length !== 0 && !step) {
         if (characterControls) {
-            model.position.set( characterControls.modelPrePos.x, characterControls.modelPrePos.y, characterControls.modelPrePos.z)
+            model.position.set(characterControls.modelPrePos.x, characterControls.modelPrePos.y, characterControls.modelPrePos.z)
             characterControls.camera.position.set(characterControls.camPrePos.x, characterControls.camPrePos.y, characterControls.camPrePos.z)
         }
     }
