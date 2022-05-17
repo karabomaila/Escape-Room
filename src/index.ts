@@ -59,6 +59,19 @@ new GLTFLoader().load("RoomToBeEscaped/scene.gltf", function (gltf) {
     // console.log(gltf)
 })
 
+// second room
+var myRoom2: THREE.Group
+
+new GLTFLoader().load("RoomToBeEscaped/room2/scene.gltf", function (gltf) {
+    myRoom2 = gltf.scene
+    scene.add(myRoom2)
+    myRoom2.scale.set(5, 5, 5)
+    myRoom2.position.set(500, -1000, -4600)
+    myRoom2.castShadow = true
+    myRoom2.receiveShadow = true
+})
+
+
 // MODEL WITH ANIMATIONS
 var model: THREE.Group
 var characterControls: CharacterControls
