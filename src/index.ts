@@ -58,6 +58,7 @@ new GLTFLoader().load("RoomToBeEscaped/scene.gltf", function (gltf) {
     myRoom.receiveShadow = true
 })
 
+// second room
 var myRoom2: THREE.Group
 
 new GLTFLoader().load("RoomToBeEscaped/room2/scene.gltf", function (gltf) {
